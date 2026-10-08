@@ -53,4 +53,7 @@ export class MigrationRunner {
   }
 }
 
+import { migration001CoreSchema } from './migrations/001_core_schema.js';
+
 export const migrator = new MigrationRunner();
+migrator.register(migration001CoreSchema);
