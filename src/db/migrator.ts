@@ -54,6 +54,8 @@ export class MigrationRunner {
 }
 
 import { migration001CoreSchema } from './migrations/001_core_schema.js';
+import { migration002CommandsAndTelemetry } from './migrations/002_commands_and_telemetry.js';
 
 export const migrator = new MigrationRunner();
 migrator.register(migration001CoreSchema);
+migrator.register(migration002CommandsAndTelemetry);
