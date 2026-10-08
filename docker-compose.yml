@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sunkey-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: payg_bridge
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d payg_bridge']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: sunkey-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: sunkey-mqtt
+    ports:
+      - '1883:1883'
+      - '9001:9001'
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    restart: unless-stopped
+
+  bridge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sunkey-bridge
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      PORT: 3001
+      HOST: 0.0.0.0
+      DATABASE_URL: postgresql://postgres:postgrespassword@postgres:5432/payg_bridge
+      REDIS_URL: redis://redis:6379
+      MQTT_BROKER_URL: mqtt://mqtt:1883
+      STELLAR_NETWORK_PASSPHRASE: "Test SDF Network ; September 2015"
+      STELLAR_RPC_URL: "https://soroban-testnet.stellar.org"
+      CONTRACT_ID: "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
+    ports:
+      - '3001:3001'
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
